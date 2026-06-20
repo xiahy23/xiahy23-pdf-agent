@@ -1,0 +1,25 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# ===== 运行产物 / 日志（解析输出、临时上传等，不入库）=====
+outputs/
+results/
+*.log
+/tmp/
+
+# ===== 外部大依赖（MinerU 本体、其虚拟环境与模型，绝不入库）=====
+MinerU/
+OmniDocBench/
+.local_tools/
+
+# ===== 数据与样例 PDF（体积大，按需本地准备）=====
+data/
+
+# ===== 编辑器 / 系统 =====
+.DS_Store
+.idea/
+.vscode/

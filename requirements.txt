@@ -1,0 +1,11 @@
+# PDF-Miner Agent —— 运行与测试依赖
+# 安装：python3 -m pip install -r requirements.txt
+
+# REST API 封装
+flask>=1.1
+
+# 可用性测试
+pytest>=6.0
+
+# 说明：实际的 PDF 解析由 MinerU 提供（需单独安装，见 README「运行前提」）。
+# 本仓库只包含 Agent 封装层与测试，不含 MinerU 本体及其 CUDA/torch 依赖。
