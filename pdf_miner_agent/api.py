@@ -8,6 +8,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
+from . import docgate
 from .agent import PDFMinerAgent, PDFMinerConfig
 
 
@@ -79,6 +80,34 @@ def parse_upload():
             run_id=request.form.get("run_id") or None,
         )
         return jsonify(package)
+    except Exception as exc:
+        return jsonify({"error": f"{type(exc).__name__}: {exc}"}), 500
+
+
+@app.route("/gate", methods=["POST"])
+def gate():
+    """Run the DocGate quality gate over an existing MinerU parse directory and
+    write a `<stem>_gated.md` with adopted corrections applied. Exposes
+    docgate.gate_and_rewrite so downstream consumers (e.g. the RAG ablation) can
+    obtain gated markdown through the API rather than an in-process import."""
+    payload = request.get_json(silent=True) or {}
+    pdf_path = payload.get("pdf_path")
+    parse_dir = payload.get("parse_dir")
+    if not pdf_path:
+        return jsonify({"error": "missing pdf_path"}), 400
+    if not parse_dir:
+        return jsonify({"error": "missing parse_dir"}), 400
+    try:
+        report = docgate.gate_and_rewrite(
+            Path(pdf_path),
+            Path(parse_dir),
+            enable_glm=bool(payload.get("enable_glm", True)),
+            glm_max_calls=int(payload.get("glm_max_calls", 12)),
+            text_gate=payload.get("text_gate", "log_only"),
+            model=payload.get("model"),
+            dry_run=bool(payload.get("dry_run", False)),
+        )
+        return jsonify(report)
     except Exception as exc:
         return jsonify({"error": f"{type(exc).__name__}: {exc}"}), 500
 

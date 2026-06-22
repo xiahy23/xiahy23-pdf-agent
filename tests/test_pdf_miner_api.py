@@ -134,3 +134,41 @@ def test_parse_upload_missing_file_returns_400(client):
     resp = client.post("/parse_upload", data={}, content_type="multipart/form-data")
     assert resp.status_code == 400
     assert "error" in resp.get_json()
+
+
+# ---------------------------------------------------------------------------
+# 5) HTTP 层：/gate （DocGate 质量门控，供 RAG 消融经 API 取 gated markdown）
+# ---------------------------------------------------------------------------
+# 复用已有 pipeline 解析目录；dry_run=True 只跑 L1+L2 内在标记，不联网、不调 GLM。
+_GATE_PARSE_DIR = (
+    ROOT / "outputs" / "mineru_benchmark" / "20260613_124310"
+    / "GPU-01_pipeline_auto_p0-5_standard_two_column_attention"
+    / "standard_two_column_attention" / "auto"
+)
+
+
+def test_gate_missing_params_returns_400(client):
+    resp = client.post("/gate", json={"pdf_path": str(SAMPLE_PDF.relative_to(ROOT))})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "missing parse_dir"
+
+
+@pytest.mark.skipif(
+    not _GATE_PARSE_DIR.exists(),
+    reason=f"缺少可复用解析目录：{_GATE_PARSE_DIR}",
+)
+def test_gate_dry_run_ok(client):
+    """/gate 在 dry_run 下只做内在标记：返回门控报告且不触发任何 GLM 调用。"""
+    resp = client.post(
+        "/gate",
+        json={
+            "pdf_path": str(SAMPLE_PDF.relative_to(ROOT)),
+            "parse_dir": str(_GATE_PARSE_DIR.relative_to(ROOT)),
+            "dry_run": True,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body.get("enabled") is True
+    assert "gate_counts" in body
+    assert body["gate_counts"]["glm_called"] == 0  # dry_run 不应调用 GLM

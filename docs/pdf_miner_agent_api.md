@@ -107,3 +107,45 @@ curl -s http://127.0.0.1:8765/parse_upload \
 Parameter parsing mirrors `POST /parse`; missing `file` returns HTTP 400 and a
 parse error returns HTTP 500. The response package is identical in shape to
 `POST /parse`.
+
+## POST `/gate`
+
+Run the DocGate quality gate over an **existing** MinerU parse directory and
+write a `<stem>_gated.md` with adopted corrections applied. This exposes
+`docgate.gate_and_rewrite` so downstream consumers can obtain gated markdown
+through the API rather than an in-process import — the three-layer RAG ablation
+(`scripts/run_three_layer_ablation.sh`) uses this endpoint to produce its
+`MinerU+GLM` layer, making the ablation a genuine end-to-end API consumer.
+
+Request:
+
+```json
+{
+  "pdf_path": "data/raw_pdfs/mineru_paper.pdf",
+  "parse_dir": "outputs/.../mineru_paper/auto",
+  "enable_glm": true,
+  "glm_max_calls": 12,
+  "text_gate": "log_only",
+  "dry_run": false
+}
+```
+
+| param | default | meaning |
+| --- | --- | --- |
+| `pdf_path` | — (required) | Source PDF (regions are cropped from it for visual arbitration) |
+| `parse_dir` | — (required) | Existing MinerU parse dir (must contain `*_content_list.json` and `*.md`) |
+| `enable_glm` | `true` | Run GLM visual arbitration; if false, only intrinsic L1/L2 flagging |
+| `glm_max_calls` | `12` | Cap on GLM calls |
+| `text_gate` | `"log_only"` | Text adoption policy (`log_only` records but does not auto-adopt; `on` adopts when all four text guardrails pass) |
+| `dry_run` | `false` | Flag elements but make no GLM call (deterministic, offline) |
+
+Missing `pdf_path` or `parse_dir` returns HTTP 400; an error returns HTTP 500.
+The response is the DocGate report (`gate_counts`, `adoptions`, and a
+`gated_markdown` path when corrections were written).
+
+```bash
+curl -s -X POST http://127.0.0.1:8765/gate \
+  -H 'content-type: application/json' \
+  -d '{"pdf_path":"data/raw_pdfs/mineru_paper.pdf","parse_dir":"outputs/.../auto","dry_run":true}' \
+  | python3 -m json.tool
+```
