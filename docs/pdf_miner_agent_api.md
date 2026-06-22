@@ -44,20 +44,44 @@ Request:
   "effort": null,
   "reuse_existing": true,
   "timeout_sec": 900,
-  "force": false
+  "force": false,
+  "enable_glm_gate": true,
+  "glm_max_calls": 12,
+  "text_gate": "log_only",
+  "glm_dry_run": false
 }
 ```
+
+Request parameters (all optional except `pdf_path`):
+
+| param | default | meaning |
+| --- | --- | --- |
+| `pdf_path` | — (required) | Local PDF path to parse |
+| `backend` | `"pipeline"` | MinerU backend (`pipeline` / `hybrid-engine`) |
+| `method` | `"auto"` | Parse method routing |
+| `effort` | `null` | Optional effort hint |
+| `start_page` / `end_page` | `null` | Optional page range |
+| `timeout_sec` | `900` | MinerU subprocess timeout |
+| `force` | `false` | Force re-parse even if output exists |
+| `reuse_existing` | `false` | Reuse an existing parse dir (fast, no GPU) |
+| `enable_glm_gate` | `true` | Run the online GLM visual-arbitration quality gate |
+| `glm_max_calls` | `12` | Cap on GLM arbitration calls per document |
+| `text_gate` | `"log_only"` | Text-kind adoption policy (`log_only` = record but do not auto-adopt) |
+| `glm_dry_run` | `false` | Build the gate plan without calling the GLM API |
+| `run_id` | `null` | Optional explicit run id |
 
 Response fields:
 
 | field | meaning |
 | --- | --- |
-| `input` | PDF path, sha256 and file size |
+| `input` | PDF path, name, sha256 and file size in bytes |
 | `classification` | PDF type tags and OCR/text-layer probe |
+| `config` | The effective `PDFMinerConfig` used for this run |
 | `execution` | MinerU command, return code, runtime and log path |
 | `structured_output` | Markdown length, element counts and output examples |
-| `quality_reference` | OmniDocBench quality metrics and GLM arbitration summary |
-| `artifacts` | Markdown, JSON, layout PDF, span PDF, image and package paths |
+| `online_quality` | Live DocGate report for **this** document: intrinsic checks + GLM arbitration outcomes, gate counts and document-quality summary (or `{"enabled": false}` if the gate did not run) |
+| `offline_benchmark_reference` | System-level OmniDocBench / GLM arbitration summary from a fixed eval run, kept for provenance only — explicitly **NOT** this document's score |
+| `artifacts` | Markdown, content/middle/model JSON, layout PDF, span PDF and image paths |
 
 Minimal curl example:
 
@@ -80,43 +104,6 @@ curl -s http://127.0.0.1:8765/parse_upload \
   -F reuse_existing=true | python3 -m json.tool
 ```
 
-## SciPilot Integration
-
-The script `scripts/run_pdf_agent_scipilot_pipeline.py` builds a local research
-payload, uploads local artifacts to `https://scipilot.chat/discovery`, and
-prefills the Discovery node editors for task parsing and literature review.
-
-Dry run:
-
-```bash
-python3 scripts/run_pdf_agent_scipilot_pipeline.py \
-  --pdf data/raw_pdfs/standard_two_column_attention.pdf \
-  --reuse-existing \
-  --dry-run
-```
-
-Real platform run for upload + local node prefill:
-
-```bash
-HEADLESS=1 python3 scripts/run_pdf_agent_scipilot_pipeline.py \
-  --pdf data/raw_pdfs/standard_two_column_attention.pdf \
-  --reuse-existing \
-  --stages ''
-```
-
-Optional online stage run, if the platform-side model/API configuration is
-available:
-
-```bash
-HEADLESS=0 python3 scripts/run_pdf_agent_scipilot_pipeline.py \
-  --pdf data/raw_pdfs/standard_two_column_attention.pdf \
-  --reuse-existing \
-  --stages 任务解析,文献调研,假设构建,方法设计,实验分析,报告生成
-```
-
-If the Discovery UI exposes file inputs, the script uploads the package JSON,
-summary Markdown, content JSON, benchmark reports, and the generated
-`task_parsing_prefill.md` / `literature_review_prefill.md` files. It then opens
-the corresponding Discovery editors (`taskMdEditor` and `litSummaryEditor`),
-fills the site templates, clicks save, switches to the hypothesis-construction
-tab, and saves screenshot/text/html/metadata evidence.
+Parameter parsing mirrors `POST /parse`; missing `file` returns HTTP 400 and a
+parse error returns HTTP 500. The response package is identical in shape to
+`POST /parse`.
