@@ -21,6 +21,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from . import docgate
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MINERU_BIN = ROOT / "MinerU" / ".venv" / "bin" / "mineru"
@@ -38,6 +40,10 @@ class PDFMinerConfig:
     end_page: int | None = None
     timeout_sec: int = 900
     force: bool = False
+    enable_glm_gate: bool = True
+    glm_max_calls: int = 12
+    text_gate: str = "log_only"
+    glm_dry_run: bool = False
 
 
 def rel(path: Path | None) -> str | None:
@@ -214,6 +220,19 @@ def latest_benchmark_parse(pdf_name: str, backend: str = "pipeline", effort: str
     return None
 
 
+def any_existing_parse(pdf_name: str) -> Path | None:
+    """Broader reuse: find any prior parse dir (auto/ocr/hybrid_auto) for this PDF
+    anywhere under outputs/, newest first. Lets the gated pipeline run on the real
+    middle.json + the user's PDF without re-running GPU inference."""
+    target_stem = Path(pdf_name).stem
+    candidates: list[Path] = []
+    for method in ("auto", "ocr", "hybrid_auto"):
+        candidates += list((ROOT / "outputs").glob(f"**/{target_stem}/{method}"))
+    candidates = [c for c in candidates if c.is_dir() and any(c.glob("*_middle.json"))]
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0] if candidates else None
+
+
 class PDFMinerAgent:
     def __init__(self, out_root: Path = OUT_ROOT):
         self.out_root = out_root
@@ -245,6 +264,8 @@ class PDFMinerAgent:
         case_out.mkdir(parents=True, exist_ok=True)
 
         parse_dir = latest_benchmark_parse(pdf_path.name, config.backend, config.effort) if reuse_existing else None
+        if reuse_existing and not parse_dir:
+            parse_dir = any_existing_parse(pdf_path.name)
         result: dict[str, Any]
         if parse_dir:
             result = {
@@ -277,6 +298,14 @@ class PDFMinerAgent:
 
         log_path = log_dir / f"{slug}.log"
         log_path.write_text(result["output"], encoding="utf-8", errors="ignore")
+        gate_report = docgate.run_docgate(
+            pdf_path,
+            parse_dir,
+            enable_glm=config.enable_glm_gate,
+            glm_max_calls=config.glm_max_calls,
+            text_gate=config.text_gate,
+            dry_run=config.glm_dry_run,
+        )
         package = self._build_package(
             pdf_path=pdf_path,
             parse_dir=parse_dir,
@@ -285,6 +314,7 @@ class PDFMinerAgent:
             config={**config.__dict__, "method_resolved": method},
             run_id=run_id,
             log_path=log_path,
+            gate_report=gate_report,
         )
         package_path = self.out_root / run_id / f"{slug}_package.json"
         package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -305,6 +335,7 @@ class PDFMinerAgent:
         config: dict[str, Any],
         run_id: str,
         log_path: Path,
+        gate_report: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         md_file = next(iter(sorted(parse_dir.glob("*.md"))), None) if parse_dir else None
         content_file = next(iter(sorted(parse_dir.glob("*_content_list.json"))), None) if parse_dir else None
@@ -317,16 +348,16 @@ class PDFMinerAgent:
         markdown = md_file.read_text(encoding="utf-8", errors="ignore") if md_file else ""
         content = load_json(content_file)
         content_summary = summarize_content(content)
-        quality = load_json(QUALITY_RESULTS) or {}
-        glm = load_json(GLM_SUMMARY) or {}
+        offline = load_json(QUALITY_RESULTS) or {}
+        offline_glm = load_json(GLM_SUMMARY) or {}
 
         return {
             "run_id": run_id,
             "created_at": datetime.now().isoformat(timespec="seconds"),
             "agent": {
                 "name": "PDF-Miner Agent",
-                "version": "0.2",
-                "backend": "MinerU + rule postprocess + OmniDocBench scorer + GLM arbitration",
+                "version": "0.3",
+                "backend": "MinerU + DocGate online quality gate (intrinsic checks + GLM visual arbitration)",
             },
             "input": {
                 "pdf_path": rel(pdf_path),
@@ -351,13 +382,15 @@ class PDFMinerAgent:
                 "has_content_json": bool(content_file),
                 "image_count": len(image_files),
             },
-            "quality_reference": {
-                "omnidocbench_quality": (quality.get("quality") or [{}])[0] if isinstance(quality, dict) else {},
+            "online_quality": gate_report or {"enabled": False, "reason": "gate not run"},
+            "offline_benchmark_reference": {
+                "note": "System-level OmniDocBench/GLM benchmark from a fixed eval run; NOT this document's score. Kept for provenance only.",
+                "omnidocbench_quality": (offline.get("quality") or [{}])[0] if isinstance(offline, dict) else {},
                 "glm_arbitration": {
-                    "status_counts": glm.get("status_counts"),
-                    "by_kind": glm.get("by_kind"),
-                    "overall": glm.get("overall"),
-                } if isinstance(glm, dict) else {},
+                    "status_counts": offline_glm.get("status_counts"),
+                    "by_kind": offline_glm.get("by_kind"),
+                    "overall": offline_glm.get("overall"),
+                } if isinstance(offline_glm, dict) else {},
             },
             "artifacts": {
                 "parse_dir": rel(parse_dir),
@@ -372,7 +405,9 @@ class PDFMinerAgent:
         }
 
     def write_markdown_summary(self, package: dict[str, Any], path: Path) -> Path:
-        q = package.get("quality_reference", {}).get("omnidocbench_quality", {})
+        gate = package.get("online_quality", {})
+        dq = gate.get("document_quality", {}) if isinstance(gate, dict) else {}
+        gc = gate.get("gate_counts", {}) if isinstance(gate, dict) else {}
         content = package.get("structured_output", {}).get("content_summary", {})
         counts = content.get("content_types", {})
         lines = [
@@ -385,14 +420,12 @@ class PDFMinerAgent:
             f"- Markdown 字符数: `{package['structured_output']['markdown_chars']}`",
             f"- 内容元素统计: `{counts}`",
             "",
-            "## 质量基准",
+            "## 在线质量门控 (本文档实测, 无需 GT)",
             "",
-            f"- OmniDocBench text acc: `{q.get('text_accuracy')}`",
-            f"- OCR stress acc: `{q.get('ocr_stress_accuracy')}`",
-            f"- formula edit acc: `{q.get('formula_accuracy')}`",
-            f"- formula CDM: `{q.get('formula_cdm')}`",
-            f"- table TEDS: `{q.get('table_teds')}`",
-            f"- reading order acc: `{q.get('reading_order_accuracy')}`",
+            f"- 元素总数 / 标记数: `{dq.get('n_elements')}` / `{dq.get('n_flagged')}`",
+            f"- 干净比例 clean_ratio: `{dq.get('clean_ratio')}`",
+            f"- 平均缺陷分 mean_defect: `{dq.get('mean_defect')}`",
+            f"- 门控计数: `flagged={gc.get('flagged')}, glm_called={gc.get('glm_called')}, adopted={gc.get('adopted')}, rejected={gc.get('rejected')}`",
             "",
             "## 结构化输出摘录",
             "",

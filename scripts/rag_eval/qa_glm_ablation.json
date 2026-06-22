@@ -1,0 +1,69 @@
+{
+  "description": "GLM-arbitration ablation QA set. Each query targets factual content in a scanned/rasterized academic PDF (mineru_paper.pdf, an accelerometer energy-expenditure study) whose body text MinerU OCR'd with words joined together (missing spaces). The no_gate corpus is MinerU's raw markdown (run-on text); the gated corpus is the same markdown after the online DocGate GLM visual arbitration re-inserted word boundaries on flagged blocks. A retrieved chunk is relevant if its normalized text (lowercased, alphanumerics only, after stripping HTML/LaTeX) contains ANY answer_norm string. Because normalize() removes spaces, the SAME answer matches in both corpora; any Hit@k difference is therefore purely retrieval (embedding) quality on run-on vs. de-joined text, not an artifact of the relevance test.",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "corpora": {
+    "mineru_paper": {
+      "raw_pdf": "data/raw_pdfs/mineru_paper.pdf",
+      "no_gate_markdown": "outputs/pdf_miner_agent/ab_minerupaper_pipeline/mineru_paper_pipeline_auto/mineru_paper/auto/mineru_paper.md",
+      "gated_markdown": "outputs/pdf_miner_agent/ab_minerupaper_pipeline/mineru_paper_pipeline_auto/mineru_paper/auto/mineru_paper_gated.md"
+    }
+  },
+  "queries": [
+    {
+      "id": "mp-q1-study-purpose",
+      "corpus": "mineru_paper",
+      "category": "abstract-text",
+      "query": "What were the study purposes regarding energy expenditure prediction models from accelerometer data?",
+      "answer_norm": ["developenergyexpenditure", "energyexpenditureeepredictionmodelsfromrawaccelerometer"]
+    },
+    {
+      "id": "mp-q2-num-children",
+      "corpus": "mineru_paper",
+      "category": "abstract-text",
+      "query": "How many children participated in the study and what percentage were boys?",
+      "answer_norm": ["fourtyonechildren", "41children", "54boys"]
+    },
+    {
+      "id": "mp-q3-models",
+      "corpus": "mineru_paper",
+      "category": "methods-text",
+      "query": "Which four prediction models were compared, including the mixed linear model and random forest?",
+      "answer_norm": ["randomforestmodel", "artificialneuralnetwork", "mixedlinearmodel"]
+    },
+    {
+      "id": "mp-q4-wear-positions",
+      "corpus": "mineru_paper",
+      "category": "abstract-text",
+      "query": "On how many different wear positions were the accelerometers placed on the preschoolers?",
+      "answer_norm": ["fivedifferentwearpositions", "wearpositionsinpreschoolers"]
+    },
+    {
+      "id": "mp-q5-crossval",
+      "corpus": "mineru_paper",
+      "category": "methods-text",
+      "query": "What cross-validation scheme was used to evaluate prediction accuracy?",
+      "answer_norm": ["leaveoneoutcrossvalidation", "rootmeansquared"]
+    },
+    {
+      "id": "mp-q6-semistructured",
+      "corpus": "mineru_paper",
+      "category": "methods-text",
+      "query": "What semi-structured protocol did the children complete during data collection?",
+      "answer_norm": ["semistructuredprotocolof10", "ageappropriateactiviti"]
+    },
+    {
+      "id": "mp-q7-rf-conclusion",
+      "corpus": "mineru_paper",
+      "category": "results-text",
+      "query": "What was concluded about the random forest as an alternative to linear and ANN models for EE prediction?",
+      "answer_norm": ["viablealternativetolinear", "rfseemstobeaviable"]
+    },
+    {
+      "id": "mp-q8-overestimate",
+      "corpus": "mineru_paper",
+      "category": "intro-text",
+      "query": "Why do highly structured laboratory protocols tend to overestimate energy expenditure in children?",
+      "answer_norm": ["overestimateeeinchildren", "limitsthetransfertofreeliving"]
+    }
+  ]
+}

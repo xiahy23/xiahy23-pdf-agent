@@ -1,0 +1,70 @@
+{
+  "description": "Unified three-layer RAG retrieval ablation: PyMuPDF (baseline) -> MinerU (no_gate) -> MinerU + GLM online arbitration (gated). One source PDF, one QA set, one relevance test across all three corpora, so Hit@k is comparable layer to layer. The PDF (mineru_paper.pdf) embeds scanned image pages of an accelerometer energy-expenditure study: PyMuPDF reads only the digital text layer (the MinerU paper itself) and cannot reach the image-page content at all; MinerU OCR reads the images but joins words together (missing spaces); DocGate's GLM visual arbitration re-inserts the word boundaries. Relevance is WORD-BOUNDARY preserving: text is lowercased, HTML/LaTeX stripped, non-alphanumerics collapsed to single spaces (spaces KEPT). A chunk is relevant if its normalized text contains any answer phrase. Because spaces are kept, a run-on passage no longer spuriously matches a spaced answer phrase, so the second hop (MinerU -> +GLM) is visible. NOTE: this relevance test differs from the deprecated MinerU-vs-PyMuPDF set (which stripped spaces); the two are intentionally not comparable.",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "relevance": "word_boundary",
+  "corpora": {
+    "mineru_paper": {
+      "raw_pdf": "data/raw_pdfs/mineru_paper.pdf",
+      "no_gate_markdown": "outputs/pdf_miner_agent/ab_minerupaper_pipeline/mineru_paper_pipeline_auto/mineru_paper/auto/mineru_paper.md",
+      "gated_markdown": "outputs/pdf_miner_agent/ab_minerupaper_pipeline/mineru_paper_pipeline_auto/mineru_paper/auto/mineru_paper_gated.md"
+    }
+  },
+  "queries": [
+    {
+      "id": "mp-q1-study-purpose",
+      "corpus": "mineru_paper",
+      "category": "abstract-text",
+      "query": "What were the study purposes regarding energy expenditure prediction from accelerometer data and the performance of three different accelerometers?",
+      "answer_norm": ["performance of three different accelerometers", "three different accelerometers on five different wear positions"]
+    },
+    {
+      "id": "mp-q2-num-children",
+      "corpus": "mineru_paper",
+      "category": "abstract-text",
+      "query": "How many children participated in the study and what percentage were boys?",
+      "answer_norm": ["forty one children", "41 children"]
+    },
+    {
+      "id": "mp-q3-models",
+      "corpus": "mineru_paper",
+      "category": "methods-text",
+      "query": "Which prediction models were compared, including the mixed linear model and random forest?",
+      "answer_norm": ["random forest model", "mixed linear model"]
+    },
+    {
+      "id": "mp-q4-wear-positions",
+      "corpus": "mineru_paper",
+      "category": "abstract-text",
+      "query": "On how many different wear positions were the accelerometers placed on the preschoolers?",
+      "answer_norm": ["five different wear positions"]
+    },
+    {
+      "id": "mp-q5-crossval",
+      "corpus": "mineru_paper",
+      "category": "methods-text",
+      "query": "What cross-validation scheme was used to evaluate prediction accuracy?",
+      "answer_norm": ["leave one out cross validation"]
+    },
+    {
+      "id": "mp-q6-semistructured",
+      "corpus": "mineru_paper",
+      "category": "methods-text",
+      "query": "What semi-structured protocol did the children complete during data collection?",
+      "answer_norm": ["semi structured protocol", "age appropriate activiti"]
+    },
+    {
+      "id": "mp-q7-rf-conclusion",
+      "corpus": "mineru_paper",
+      "category": "results-text",
+      "query": "What was concluded about the random forest as a viable alternative to linear and ANN models?",
+      "answer_norm": ["viable alternative to linear", "rf seems to be a viable"]
+    },
+    {
+      "id": "mp-q8-overestimate",
+      "corpus": "mineru_paper",
+      "category": "intro-text",
+      "query": "Why do highly structured laboratory protocols tend to overestimate energy expenditure in children?",
+      "answer_norm": ["overestimate ee in children", "limits the transfer to free living"]
+    }
+  ]
+}

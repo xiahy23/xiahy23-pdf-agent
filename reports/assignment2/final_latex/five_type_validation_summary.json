@@ -1,0 +1,152 @@
+{
+  "items": [
+    {
+      "category": "formula_dense",
+      "pdf": "math_formula_pinns.pdf",
+      "source": "mineru_benchmark_20260613_095209",
+      "pages": 22,
+      "returncode": 0,
+      "seconds": 29.583,
+      "seconds_per_page": 1.345,
+      "markdown_chars": 47524,
+      "content_items": 161,
+      "content_types": {
+        "text": 87,
+        "aside_text": 1,
+        "footer": 2,
+        "page_number": 21,
+        "equation": 28,
+        "code": 1,
+        "chart": 12,
+        "page_footnote": 2,
+        "table": 4,
+        "list": 3
+      },
+      "artifact": "outputs/mineru_benchmark/20260613_095209/BM-02_pipeline_auto_math_formula_pinns/math_formula_pinns/auto"
+    },
+    {
+      "category": "scanned_ocr",
+      "pdf": "generated_scanned_low_quality.pdf",
+      "source": "mineru_benchmark_20260613_095209",
+      "pages": 5,
+      "returncode": 0,
+      "seconds": 22.882,
+      "seconds_per_page": 4.576,
+      "markdown_chars": 14526,
+      "content_items": 67,
+      "content_types": {
+        "text": 51,
+        "aside_text": 1,
+        "header": 1,
+        "page_footnote": 4,
+        "footer": 1,
+        "page_number": 4,
+        "image": 2,
+        "equation": 3
+      },
+      "artifact": "outputs/mineru_benchmark/20260613_095209/BM-03_pipeline_ocr_generated_scanned_low_quality/generated_scanned_low_quality/ocr"
+    },
+    {
+      "category": "standard_two_column",
+      "pdf": "standard_two_column_attention.pdf",
+      "source": "outputs/pdf_miner_agent/20260613_211938/standard_two_column_attention_pipeline_auto_package.json",
+      "pages": 15,
+      "returncode": 0,
+      "seconds": 0.0,
+      "seconds_per_page": null,
+      "markdown_chars": 19190,
+      "content_items": 80,
+      "content_types": {
+        "text": 62,
+        "aside_text": 1,
+        "page_footnote": 4,
+        "footer": 1,
+        "page_number": 5,
+        "image": 2,
+        "equation": 4,
+        "table": 1
+      },
+      "artifact": "outputs/mineru_benchmark/20260613_124310/GPU-01_pipeline_auto_p0-5_standard_two_column_attention/standard_two_column_attention/auto"
+    },
+    {
+      "category": "table_complex",
+      "pdf": "complex_tables_pdebench.pdf",
+      "source": "outputs/pdf_miner_agent/five_type_validation_v2/complex_tables_pdebench_pipeline_auto_package.json",
+      "pages": 4,
+      "returncode": 0,
+      "seconds": 26.762,
+      "seconds_per_page": 6.691,
+      "markdown_chars": 17883,
+      "content_items": 40,
+      "content_types": {
+        "text": 31,
+        "aside_text": 1,
+        "page_footnote": 1,
+        "footer": 1,
+        "image": 1,
+        "page_number": 3,
+        "table": 1,
+        "equation": 1
+      },
+      "artifact": "outputs/pdf_miner_agent/five_type_validation_v2/complex_tables_pdebench_pipeline_auto/complex_tables_pdebench/auto"
+    },
+    {
+      "category": "scanned_or_rasterized,problem_pdf",
+      "pdf": "generated_problem_rasterized.pdf",
+      "source": "outputs/pdf_miner_agent/five_type_validation_v2/generated_problem_rasterized_pipeline_ocr_package.json",
+      "pages": 4,
+      "returncode": 0,
+      "seconds": 19.822,
+      "seconds_per_page": 4.955,
+      "markdown_chars": 11300,
+      "content_items": 50,
+      "content_types": {
+        "text": 39,
+        "aside_text": 1,
+        "page_footnote": 5,
+        "image": 2,
+        "page_number": 3
+      },
+      "artifact": "outputs/pdf_miner_agent/five_type_validation_v2/generated_problem_rasterized_pipeline_ocr/generated_problem_rasterized/ocr"
+    },
+    {
+      "category": "chemical_structure_pdf",
+      "pdf": "chemistry_functional_groups.pdf",
+      "source": "outputs/pdf_miner_agent/five_type_validation_v4/chemistry_functional_groups_pipeline_ocr_package.json",
+      "pages": 1,
+      "returncode": 0,
+      "seconds": 18.655,
+      "seconds_per_page": 18.655,
+      "markdown_chars": 6617,
+      "content_items": 63,
+      "content_types": {
+        "text": 12,
+        "image": 48,
+        "header": 1,
+        "page_number": 1,
+        "footer": 1
+      },
+      "artifact": "outputs/pdf_miner_agent/five_type_validation_v4/chemistry_functional_groups_pipeline_ocr/chemistry_functional_groups/ocr",
+      "notes": "OmniDocBench/LibreTexts chemistry functional groups page converted to local one-page PDF; structures preserved as image regions, not converted to SMILES"
+    },
+    {
+      "category": "low_quality_historical_double_column_ocr",
+      "pdf": "Rosenblatt_1959-09865-001.pdf",
+      "source": "outputs/pdf_miner_agent/five_type_validation_v3/Rosenblatt_1959-09865-001_pipeline_ocr_package.json",
+      "pages": 3,
+      "returncode": 0,
+      "seconds": 21.947,
+      "seconds_per_page": 7.316,
+      "markdown_chars": 9637,
+      "content_items": 30,
+      "content_types": {
+        "text": 23,
+        "header": 3,
+        "page_footnote": 1,
+        "page_number": 3
+      },
+      "artifact": "outputs/pdf_miner_agent/five_type_validation_v3/Rosenblatt_1959-09865-001_pipeline_ocr/Rosenblatt_1959-09865-001/ocr",
+      "notes": "real low-quality historical double-column scan; OCR noise includes 19S8, punctuation mixing, and word breaks"
+    }
+  ]
+}

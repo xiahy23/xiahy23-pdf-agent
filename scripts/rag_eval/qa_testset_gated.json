@@ -1,0 +1,130 @@
+{
+  "description": "RAG retrieval ablation QA set. Each query targets content that high-quality structured parsing (MinerU) preserves but naive text extraction (PyMuPDF) garbles: display equations with sub/superscripts, multi-cell tables, and multi-column body text. A retrieved chunk counts as relevant if its normalized text (lowercased, alphanumerics only) contains ANY string in answer_norm. The same relevance test is applied to both corpora, so a hit is earned, not assumed.",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "corpora": {
+    "math_formula_pinns": {
+      "raw_pdf": "data/raw_pdfs/math_formula_pinns.pdf",
+      "mineru_markdown": "outputs/mineru_benchmark/20260613_091050/BM-02_pipeline_auto_math_formula_pinns/math_formula_pinns/auto/math_formula_pinns_gated.md"
+    },
+    "complex_tables_pdebench": {
+      "raw_pdf": "data/raw_pdfs/complex_tables_pdebench.pdf",
+      "mineru_markdown": "outputs/pdf_miner_agent/five_type_validation_v2/complex_tables_pdebench_pipeline_auto/complex_tables_pdebench/auto/complex_tables_pdebench_gated.md"
+    }
+  },
+  "queries": [
+    {
+      "id": "pinns-q1-burgers-eq",
+      "corpus": "math_formula_pinns",
+      "category": "formula",
+      "query": "What is the Burgers equation with viscosity used in the data-driven solution example, including the 0.01/pi coefficient?",
+      "answer_norm": [
+        "uux001uxx",
+        "001uxx"
+      ]
+    },
+    {
+      "id": "pinns-q2-mse-loss",
+      "corpus": "math_formula_pinns",
+      "category": "formula",
+      "query": "How is the mean squared error loss decomposed into a supervised data term and a physics residual term?",
+      "answer_norm": [
+        "msemseumsef",
+        "mseumsef"
+      ]
+    },
+    {
+      "id": "pinns-q3-general-pde",
+      "corpus": "math_formula_pinns",
+      "category": "formula",
+      "query": "What is the general parametrized nonlinear partial differential equation form with the nonlinear operator N acting on u?",
+      "answer_norm": [
+        "utnu0",
+        "utnu0x",
+        "utmathcalnu0"
+      ]
+    },
+    {
+      "id": "pinns-q4-l2-error",
+      "corpus": "math_formula_pinns",
+      "category": "formula",
+      "query": "What relative L2-norm prediction error did the physics-informed network achieve on the Burgers equation?",
+      "answer_norm": [
+        "67cdot104",
+        "6710",
+        "67104"
+      ]
+    },
+    {
+      "id": "pinns-q5-architecture",
+      "corpus": "math_formula_pinns",
+      "category": "multicol-text",
+      "query": "How many parameters, layers, and neurons per layer were used for the Burgers data-driven solution network?",
+      "answer_norm": [
+        "3021",
+        "9layer",
+        "20neurons"
+      ]
+    },
+    {
+      "id": "pinns-q6-optimizer",
+      "corpus": "math_formula_pinns",
+      "category": "multicol-text",
+      "query": "Which quasi-Newton full-batch optimization algorithm was used to minimize the loss functions?",
+      "answer_norm": [
+        "lbfgs",
+        "quasinewton"
+      ]
+    },
+    {
+      "id": "pdebench-q1-advection-samples",
+      "corpus": "complex_tables_pdebench",
+      "category": "table",
+      "query": "In the dataset summary table, how many samples were generated for the 1D advection PDE?",
+      "answer_norm": [
+        "advection1yes1024200",
+        "advection1yes102420010000"
+      ]
+    },
+    {
+      "id": "pdebench-q2-cns-resolution",
+      "corpus": "complex_tables_pdebench",
+      "category": "table",
+      "query": "What spatial resolution does the 2D compressible Navier-Stokes dataset use in the summary table?",
+      "answer_norm": [
+        "compressiblenavierstokes2yes512512",
+        "navierstokes2yes512512"
+      ]
+    },
+    {
+      "id": "pdebench-q3-baselines",
+      "corpus": "complex_tables_pdebench",
+      "category": "table",
+      "query": "Which machine learning baseline models does PDEBench provide results for?",
+      "answer_norm": [
+        "fnounetpinn",
+        "fnounetpinngradientbased"
+      ]
+    },
+    {
+      "id": "pdebench-q4-num-pdes",
+      "corpus": "complex_tables_pdebench",
+      "category": "multicol-text",
+      "query": "How many distinct PDEs and how many datasets does the PDEBench suite cover?",
+      "answer_norm": [
+        "11pdes",
+        "11wellknowntimedependent",
+        "35datasets"
+      ]
+    },
+    {
+      "id": "pdebench-q5-darcy-time",
+      "corpus": "complex_tables_pdebench",
+      "category": "table",
+      "query": "Is the 2D Darcy flow dataset time-dependent in the dataset summary table?",
+      "answer_norm": [
+        "darcyflow2no128128",
+        "darcyflow2no"
+      ]
+    }
+  ]
+}

@@ -23,3 +23,20 @@ data/
 .DS_Store
 .idea/
 .vscode/
+
+# ===== 本仓库纳入的样例 PDF（用于三层 RAG 消融与多类解析复现）=====
+!data/
+!data/raw_pdfs/
+!data/raw_pdfs/*.pdf
+
+# ===== LaTeX 编译中间产物 =====
+*.aux
+*.toc
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# ===== API 密钥/凭据 =====
+info.txt
+.auth/

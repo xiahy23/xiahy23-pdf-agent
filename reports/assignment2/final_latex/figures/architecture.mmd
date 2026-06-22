@@ -1,0 +1,54 @@
+%% 三层系统架构图 —— PDF-Miner Agent
+%% 渲染: https://mermaid.live 或 `mmdc -i architecture.mmd -o architecture.pdf`
+%% 三层: 解析层 / 质量评估层 / 平台集成层
+flowchart TB
+    classDef parse   fill:#E3F2FD,stroke:#2C7FB8,stroke-width:1.5px,color:#0D3C61;
+    classDef quality fill:#FFF3E0,stroke:#E65100,stroke-width:1.5px,color:#7A2E00;
+    classDef platform fill:#E8F5E9,stroke:#2E7D32,stroke-width:1.5px,color:#1B5E20;
+    classDef io      fill:#F5F5F5,stroke:#888,stroke-dasharray:4 3,color:#333;
+
+    IN([输入 PDF / multipart 上传]):::io
+
+    subgraph L1["① 解析层 Parsing Layer"]
+        direction TB
+        DET["PDF 类型探测<br/>元数据 · 文字层判断 · SHA256"]:::parse
+        ROUTE{"策略路由<br/>born-digital / 扫描 / rasterized"}:::parse
+        subgraph PARSERS["MinerU 解析器"]
+            direction LR
+            PIPE["Pipeline backend<br/>快速稳定 · 0.63 s/页"]:::parse
+            HYB["Hybrid-engine backend<br/>medium · 强视觉解析 · 1.75 s/页"]:::parse
+        end
+        PKG["结构化 package<br/>Markdown · content/middle JSON · layout/span PDF"]:::parse
+        DET --> ROUTE
+        ROUTE -->|文字层充足| PIPE
+        ROUTE -->|复杂公式/表格/扫描| HYB
+        PIPE --> PKG
+        HYB --> PKG
+    end
+
+    subgraph L2["② 质量评估层 Quality Layer"]
+        direction TB
+        SCORER["OmniDocBench Scorer<br/>text/OCR · formula edit · table TEDS · reading order"]:::quality
+        CDM["CDM 公式渲染指标<br/>TeX Live + ImageMagick/Ghostscript"]:::quality
+        GLM{"GLM 仲裁门控<br/>低置信度样本 · 语言/空预测/置信度门控"}:::quality
+        SCORER --> CDM
+        CDM --> GLM
+    end
+
+    subgraph L3["③ 平台集成层 Platform Integration Layer"]
+        direction TB
+        LOCALPKG["本地 Package 打包<br/>报告 · 节点预填 Markdown"]:::platform
+        DISC["SciPilot Discovery API<br/>自动建项目 · 上传 · 任务解析/文献调研节点预填"]:::platform
+        RAGNODE["RAG 知识库节点预填<br/>结构化 chunk 注入 · 进入假设构建"]:::platform
+        LOCALPKG --> DISC
+        DISC --> RAGNODE
+    end
+
+    IN --> DET
+    PKG --> SCORER
+    GLM -->|通过门控的高保真输出| LOCALPKG
+    RAGNODE --> OUT([下游: 科学问答 / RAG 检索 / 假设构建]):::io
+
+    class L1 parse
+    class L2 quality
+    class L3 platform
