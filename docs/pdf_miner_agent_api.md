@@ -2,7 +2,9 @@
 
 This document defines the REST interface used by the assignment-2 PDF-Miner
 Agent. The implementation is in `pdf_miner_agent/api.py` and uses Flask so it
-can run in the current local environment without extra dependencies.
+can run in the current local environment without extra dependencies. It exposes
+four endpoints: `GET /health`, `POST /parse`, `POST /parse_upload`, and
+`POST /gate` (DocGate quality gate).
 
 ## Start Service
 
@@ -79,6 +81,52 @@ curl -s http://127.0.0.1:8765/parse_upload \
   -F file=@/home/robot/workspace/AI4S/data/raw_pdfs/standard_two_column_attention.pdf \
   -F reuse_existing=true | python3 -m json.tool
 ```
+
+## POST `/gate`
+
+Run the DocGate quality gate over an existing MinerU parse directory and write a
+`<stem>_gated.md` with adopted corrections applied. This exposes
+`docgate.gate_and_rewrite` so downstream consumers (e.g. the three-layer RAG
+ablation) can obtain gated markdown through the API rather than an in-process
+import. The gate logic (intrinsic table/formula/text checks) lives in
+`pdf_miner_agent/docgate.py`; the optional GLM visual arbitration lives in
+`pdf_miner_agent/arbiter.py` and is only invoked when `enable_glm=true`.
+
+Request:
+
+```json
+{
+  "pdf_path": "data/raw_pdfs/mineru_paper.pdf",
+  "parse_dir": "outputs/pdf_miner_agent/ab_minerupaper_pipeline/mineru_paper_pipeline_auto/mineru_paper/auto",
+  "enable_glm": true,
+  "glm_max_calls": 15,
+  "text_gate": "on",
+  "dry_run": false
+}
+```
+
+| field | meaning |
+| --- | --- |
+| `pdf_path` | source PDF (required; 400 if missing) |
+| `parse_dir` | existing MinerU parse directory to gate (required; 400 if missing) |
+| `enable_glm` | whether to call GLM visual arbitration; falls back silently if unavailable |
+| `glm_max_calls` | max GLM arbitration calls (cost cap) |
+| `text_gate` | `on` / `log_only` — whether text corrections are adopted or only logged |
+| `dry_run` | if true, only run intrinsic L1+L2 checks, never call GLM |
+
+Response: a gate report containing `gate_counts`, `adoptions`, and the
+`gated_markdown` output path. GLM credentials are read only from the
+`ANTHROPIC_AUTH_TOKEN` environment variable and never written to disk.
+
+```bash
+curl -s -X POST http://127.0.0.1:8765/gate \
+  -H 'content-type: application/json' \
+  -d '{"pdf_path":"data/raw_pdfs/mineru_paper.pdf",
+       "parse_dir":"outputs/pdf_miner_agent/ab_minerupaper_pipeline/mineru_paper_pipeline_auto/mineru_paper/auto",
+       "enable_glm":true,"glm_max_calls":15,"text_gate":"on"}' | python3 -m json.tool
+```
+
+Errors: missing `pdf_path` or `parse_dir` → 400; internal exception → 500.
 
 ## SciPilot Integration
 
